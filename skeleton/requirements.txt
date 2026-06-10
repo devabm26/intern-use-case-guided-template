@@ -1,0 +1,30 @@
+# Python Dependencies
+#
+# SECURITY REQUIREMENTS (see specs/security/dependency_management.spec):
+# - Pin ALL versions with == (e.g., Flask==3.0.3)
+# - Scan for CVEs: pip-audit -r requirements.txt
+# - Generate SBOM: cyclonedx-py requirements -r requirements.txt -o sbom.json
+# - Update monthly (security patches immediately)
+#
+# Add your application dependencies below:
+
+# Example structure:
+# # Web Framework
+# Flask==3.0.3
+#
+# # Database
+# psycopg2-binary==2.9.9
+#
+# # Security
+# python-dotenv==1.0.1
+#
+# # Production Server
+# gunicorn==22.0.0
+#
+# # Development & Testing
+# pytest==8.2.2
+# pytest-cov==5.0.0
+# pip-audit==2.7.3
+# detect-secrets==1.4.0
+# bandit==1.7.8
+# cyclonedx-bom==4.5.0

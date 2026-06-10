@@ -1,0 +1,248 @@
+schemaVersion: 2.2.0
+metadata:
+  name: ${{ values.component_id }}
+  version: 1.0.0
+  displayName: Enterprise Python Application
+  description: Secure Python web application with built-in compliance guardrails
+  tags:
+    - Python
+    - Flask
+    - PostgreSQL
+    - Security
+    - Red Hat UBI
+  projectType: Python
+  language: Python
+  provider: Red Hat
+
+# Dev container configuration
+components:
+  # Main Python development container (Red Hat UBI)
+  - name: python-dev
+    container:
+      image: registry.access.redhat.com/ubi9/python-311:latest
+      memoryRequest: 1Gi
+      memoryLimit: 2Gi
+      cpuRequest: 500m
+      cpuLimit: 1000m
+      mountSources: true
+      sourceMapping: /projects
+
+      # Environment variables for development
+      env:
+        - name: FLASK_ENV
+          value: development
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: PYTHONDONTWRITEBYTECODE
+          value: "1"
+
+      # Endpoints
+      endpoints:
+        - name: web
+          targetPort: 8000
+          exposure: public
+          protocol: http
+        - name: debug
+          targetPort: 5678
+          exposure: internal
+          protocol: tcp
+
+      # Volume mounts
+      volumeMounts:
+        - name: venv
+          path: /home/default/.venv
+
+  # PostgreSQL database for local development (optional)
+  - name: postgres
+    container:
+      image: registry.redhat.io/rhel8/postgresql-13:latest
+      memoryRequest: 512Mi
+      memoryLimit: 1Gi
+      env:
+        - name: POSTGRESQL_USER
+          value: devuser
+        - name: POSTGRESQL_PASSWORD
+          value: devpass
+        - name: POSTGRESQL_DATABASE
+          value: devdb
+      endpoints:
+        - name: postgres
+          targetPort: 5432
+          exposure: internal
+
+  # Persistent volume for virtual environment
+  - name: venv
+    volume:
+      size: 2Gi
+
+# Commands for common tasks
+commands:
+  # Install OpenCode CLI
+  - id: install-opencode
+    exec:
+      component: python-dev
+      commandLine: |
+        echo "=== Installing OpenCode CLI ===" && \
+        # TODO: Replace with your actual OpenCode installation command
+        # Option 1: If OpenCode is a binary, download it
+        # curl -fsSL <OPENCODE_DOWNLOAD_URL> -o /usr/local/bin/opencode && chmod +x /usr/local/bin/opencode
+        # Option 2: If OpenCode is a Python package
+        # pip install opencode-cli
+        # Option 3: If OpenCode is installed via RPM
+        # dnf install -y opencode-cli
+        echo "CONFIGURE: Update this command with your OpenCode installation method" && \
+        opencode --version || echo "OpenCode installation pending - update install command"
+      workingDir: ${PROJECT_SOURCE}
+      group:
+        kind: build
+
+  # Setup and installation
+  - id: install-dependencies
+    exec:
+      component: python-dev
+      commandLine: |
+        python -m venv /home/default/.venv && \
+        source /home/default/.venv/bin/activate && \
+        pip install --upgrade pip && \
+        pip install -r requirements.txt
+      workingDir: ${PROJECT_SOURCE}
+      group:
+        kind: build
+        isDefault: true
+
+  # Load AI context (for Vertex AI Claude via OpenCode)
+  - id: load-ai-context
+    exec:
+      component: python-dev
+      commandLine: |
+        chmod +x .devspaces/load-context.sh && \
+        ./.devspaces/load-context.sh
+      workingDir: ${PROJECT_SOURCE}
+      group:
+        kind: run
+
+  # Security scanning
+  - id: security-scan
+    exec:
+      component: python-dev
+      commandLine: |
+        source /home/default/.venv/bin/activate && \
+        echo "=== Scanning for hardcoded secrets ===" && \
+        detect-secrets scan --all-files && \
+        echo "=== Scanning dependencies for CVEs ===" && \
+        pip-audit -r requirements.txt && \
+        echo "=== Running static security analysis ===" && \
+        bandit -r src/ -f json -o bandit-report.json && \
+        echo "All security scans complete!"
+      workingDir: ${PROJECT_SOURCE}
+      group:
+        kind: test
+
+  # Run security tests
+  - id: test-security
+    exec:
+      component: python-dev
+      commandLine: |
+        source /home/default/.venv/bin/activate && \
+        pytest tests/test_security.py -v --tb=short
+      workingDir: ${PROJECT_SOURCE}
+      group:
+        kind: test
+        isDefault: true
+
+  # Run all tests with coverage
+  - id: test-all
+    exec:
+      component: python-dev
+      commandLine: |
+        source /home/default/.venv/bin/activate && \
+        pytest tests/ -v --cov=src --cov-report=term --cov-report=html
+      workingDir: ${PROJECT_SOURCE}
+      group:
+        kind: test
+
+  # Start development server
+  - id: run-dev
+    exec:
+      component: python-dev
+      commandLine: |
+        source /home/default/.venv/bin/activate && \
+        python -m src.app
+      workingDir: ${PROJECT_SOURCE}
+      group:
+        kind: run
+        isDefault: true
+
+  # Build container image (using Podman)
+  - id: build-container
+    exec:
+      component: python-dev
+      commandLine: |
+        podman build -t ${PROJECT_NAME}:latest .
+      workingDir: ${PROJECT_SOURCE}
+      group:
+        kind: build
+
+  # Scan container image
+  - id: scan-container
+    exec:
+      component: python-dev
+      commandLine: |
+        trivy image --severity HIGH,CRITICAL ${PROJECT_NAME}:latest
+      workingDir: ${PROJECT_SOURCE}
+      group:
+        kind: test
+
+  # Generate SBOM
+  - id: generate-sbom
+    exec:
+      component: python-dev
+      commandLine: |
+        source /home/default/.venv/bin/activate && \
+        cyclonedx-py requirements -r requirements.txt -o sbom.json && \
+        echo "SBOM generated: sbom.json"
+      workingDir: ${PROJECT_SOURCE}
+      group:
+        kind: build
+
+  # View specifications
+  - id: view-specs
+    exec:
+      component: python-dev
+      commandLine: |
+        echo "Available Specifications:" && \
+        echo "=========================" && \
+        echo "" && \
+        echo "Security:" && \
+        ls -1 specs/security/ && \
+        echo "" && \
+        echo "Architecture:" && \
+        ls -1 specs/architecture/ && \
+        echo "" && \
+        echo "Testing:" && \
+        ls -1 specs/testing/ && \
+        echo "" && \
+        echo "Deployment:" && \
+        ls -1 specs/deployment/
+      workingDir: ${PROJECT_SOURCE}
+      group:
+        kind: run
+
+# Events that run automatically
+events:
+  # After workspace starts
+  postStart:
+    - install-opencode
+    - install-dependencies
+
+  # Before workspace stops
+  preStop:
+    - "echo 'Workspace stopping. Remember to commit your changes!'"
+
+# Starter projects (optional)
+starterProjects:
+  - name: enterprise-python-template
+    description: Enterprise Python application with security guardrails
+    git:
+      remotes:
+        origin: <YOUR_GIT_REPOSITORY_URL>

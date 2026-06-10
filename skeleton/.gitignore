@@ -1,0 +1,85 @@
+# Enterprise Python Application - Git Ignore
+# Security: Prevents committing secrets and sensitive files
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*credentials*
+*secret*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Security Scan Results
+.secrets.baseline
+bandit-report.json
+audit-report.json
+sbom.json
+
+# CI/CD
+.gitlab-ci-local/
+
+# Documentation Build
+docs/_build/
+site/
+
+# Temporary Files
+tmp/
+temp/
+*.tmp

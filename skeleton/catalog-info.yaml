@@ -1,0 +1,35 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.component_id }}
+  description: ${{ values.description }}
+  tags:
+    - python
+    - flask
+    - postgresql
+    - secure-by-default
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    gitlab.com/project-slug: dashboards/${{ values.component_id }}
+spec:
+  type: service
+  lifecycle: production
+  owner: ${{ values.owner }}
+  system: data-platform
+  providesApis:
+    - ${{ values.component_id }}-api
+  consumesApis:
+    - postgresql-database
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: ${{ values.component_id }}-api
+  description: REST API for ${{ values.component_id }}
+spec:
+  type: openapi
+  lifecycle: production
+  owner: ${{ values.owner }}
+  definition:
+    $text: ./openapi.yaml  # Optional: if you generate OpenAPI spec

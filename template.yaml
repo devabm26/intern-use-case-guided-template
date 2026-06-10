@@ -1,0 +1,122 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: python-dashboard-secure
+  title: Secure Python Dashboard Generator
+  description: Generate a secure Flask dashboard with database connectivity - LLM-guided with security guardrails
+  tags:
+    - python
+    - flask
+    - postgresql
+    - secure
+    - ai-assisted
+spec:
+  owner: platform-engineering
+  type: service
+
+  parameters:
+    - title: Application Information
+      required:
+        - component_id
+        - owner
+      properties:
+        component_id:
+          title: Name
+          type: string
+          description: Unique name for the dashboard application
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: What data will this dashboard display?
+        owner:
+          title: Owner
+          type: string
+          description: Team or user responsible for this dashboard
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: [Group, User]
+
+    - title: Database Configuration
+      required:
+        - db_host
+        - db_name
+      properties:
+        db_host:
+          title: Database Host
+          type: string
+          description: PostgreSQL hostname (must be internal cluster service)
+          pattern: '^[a-z0-9.-]+\.svc\.cluster\.local$'
+          default: postgresql.thoughts-app.svc.cluster.local
+        db_name:
+          title: Database Name
+          type: string
+          description: Database name
+          pattern: '^[a-z0-9_]+$'
+        use_vault_secrets:
+          title: Use Vault for Secrets
+          type: boolean
+          description: Retrieve database credentials from Vault (recommended)
+          default: true
+
+    - title: Security & Compliance
+      properties:
+        enable_sbom_scanning:
+          title: Enable SBOM Scanning
+          type: boolean
+          description: Generate and scan Software Bill of Materials
+          default: true
+        enable_container_scanning:
+          title: Enable Container Scanning
+          type: boolean
+          description: Scan container images for vulnerabilities
+          default: true
+        enable_dependency_track:
+          title: Enable Dependency Tracking
+          type: boolean
+          description: Track dependencies for CVE monitoring
+          default: true
+
+  steps:
+    - id: fetch-base
+      name: Fetch Secure Base Template
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          component_id: ${{ parameters.component_id }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          db_host: ${{ parameters.db_host }}
+          db_name: ${{ parameters.db_name }}
+          use_vault_secrets: ${{ parameters.use_vault_secrets }}
+          enable_sbom_scanning: ${{ parameters.enable_sbom_scanning }}
+          enable_container_scanning: ${{ parameters.enable_container_scanning }}
+          enable_dependency_track: ${{ parameters.enable_dependency_track }}
+
+    - id: publish
+      name: Publish to GitLab
+      action: publish:gitlab
+      input:
+        allowedHosts: ['gitlab.company.com']
+        description: ${{ parameters.description }}
+        repoUrl: gitlab.company.com?owner=dashboards&repo=${{ parameters.component_id }}
+        defaultBranch: main
+        protectDefaultBranch: true
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}
