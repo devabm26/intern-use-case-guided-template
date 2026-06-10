@@ -61,8 +61,19 @@ spec:
           description: Retrieve database credentials from Vault (recommended)
           default: true
 
-    - title: Security & Compliance
+    - title: CI/CD Pipeline & Security
       properties:
+        pipeline_type:
+          title: Pipeline Type
+          type: string
+          description: Select your CI/CD platform
+          enum:
+            - tekton
+            - github-actions
+          enumNames:
+            - Tekton (OpenShift Pipelines)
+            - GitHub Actions
+          default: tekton
         enable_sbom_scanning:
           title: Enable SBOM Scanning
           type: boolean
@@ -92,17 +103,18 @@ spec:
           db_host: ${{ parameters.db_host }}
           db_name: ${{ parameters.db_name }}
           use_vault_secrets: ${{ parameters.use_vault_secrets }}
+          pipeline_type: ${{ parameters.pipeline_type }}
           enable_sbom_scanning: ${{ parameters.enable_sbom_scanning }}
           enable_container_scanning: ${{ parameters.enable_container_scanning }}
           enable_dependency_track: ${{ parameters.enable_dependency_track }}
 
     - id: publish
-      name: Publish to GitLab
-      action: publish:gitlab
+      name: Publish to GitHub
+      action: publish:github
       input:
-        allowedHosts: ['gitlab.company.com']
+        allowedHosts: ['github.com']
         description: ${{ parameters.description }}
-        repoUrl: gitlab.company.com?owner=dashboards&repo=${{ parameters.component_id }}
+        repoUrl: github.com?owner=devadbm26&repo=${{ parameters.component_id }}
         defaultBranch: main
         protectDefaultBranch: true
 
