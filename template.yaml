@@ -1,8 +1,8 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: python-dashboard-secure
-  title: Secure Python Dashboard Generator
+  name: python-secure-service
+  title: AI Assistant Secure Python service template
   description: Generate a secure Flask dashboard with database connectivity - LLM-guided with security guardrails
   tags:
     - python
