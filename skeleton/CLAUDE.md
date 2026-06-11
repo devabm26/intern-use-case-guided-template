@@ -206,7 +206,7 @@ Before marking complete:
 
 ### Scenario: Need to display user-generated content
 → **Action:** Implement output encoding per `specs/security/web_security.spec` (XSS Prevention)
-→ **Security:** Use auto-escaping (Jinja2 {{ }}, Django template {{ }})
+→ **Security:** Use auto-escaping (Jinja2 double braces, Django template double braces)
 → **Testing:** Add XSS prevention tests
 
 ### Scenario: Need to add a new dependency

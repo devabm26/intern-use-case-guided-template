@@ -82,13 +82,13 @@ REQ-3: ENABLE AUTO-ESCAPING IN TEMPLATES
 
   Flask (Jinja2):
     - Auto-escaping: Enabled by default
-    - Use: {{ variable }} for auto-escaped output
-    - Avoid: {{ variable | safe }} unless absolutely necessary
+    - Use: ${{ '{{' }} variable }} for auto-escaped output
+    - Avoid: ${{ '{{' }} variable | safe }} unless absolutely necessary
 
   Django:
     - Auto-escaping: Enabled by default
-    - Use: {{ variable }} for auto-escaped output
-    - Avoid: {{ variable | safe }} or {% autoescape off %}
+    - Use: ${{ '{{' }} variable }} for auto-escaped output
+    - Avoid: ${{ '{{' }} variable | safe }} or ${{ '{%' }} autoescape off %}
 
   Verification:
     assert app.jinja_env.autoescape == True  # Flask
@@ -97,11 +97,11 @@ REQ-4: ESCAPE ALL USER-GENERATED CONTENT
   Rule: ALL user input rendered in HTML MUST be escaped
 
   ✅ COMPLIANT:
-    <p>{{ user.comment }}</p>  # Auto-escaped by Jinja2/Django
-    <div>{{ escape(user_input) }}</div>  # Manual escape if needed
+    <p>${{ '{{' }} user.comment }}</p>  # Auto-escaped by Jinja2/Django
+    <div>${{ '{{' }} escape(user_input) }}</div>  # Manual escape if needed
 
   ❌ NON-COMPLIANT:
-    <p>{{ user.comment | safe }}</p>  # Bypasses escaping - XSS!
+    <p>${{ '{{' }} user.comment | safe }}</p>  # Bypasses escaping - XSS!
     <div>${user_input}</div>  # Raw interpolation in JavaScript template
 
 REQ-5: VALIDATE AND SANITIZE INPUT
@@ -121,11 +121,11 @@ REQ-6: NO INLINE JAVASCRIPT
   Rule: Avoid inline JavaScript (violates CSP, increases XSS risk)
 
   ❌ NON-COMPLIANT:
-    <button onclick="deleteUser('{{ user.id }}')">Delete</button>
+    <button onclick="deleteUser('${{ '{{' }} user.id }}')">Delete</button>
     <div onerror="maliciousCode()">Content</div>
 
   ✅ COMPLIANT:
-    <button class="delete-btn" data-user-id="{{ user.id }}">Delete</button>
+    <button class="delete-btn" data-user-id="${{ '{{' }} user.id }}">Delete</button>
     <script src="/static/js/app.js"></script>  # External script
 
     // In app.js
@@ -162,13 +162,13 @@ REQ-8: CSRF TOKENS IN FORMS
 
   Flask (Jinja2):
     <form method="POST">
-      {{ csrf_token() }}
+      ${{ '{{' }} csrf_token() }}
       <!-- form fields -->
     </form>
 
   Django:
     <form method="POST">
-      {% csrf_token %}
+      ${{ '{%' }} csrf_token %}
       <!-- form fields -->
     </form>
 

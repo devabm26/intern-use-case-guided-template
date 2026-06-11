@@ -140,9 +140,9 @@ TEST-3.2: Malicious Script Tags Escaped
 TEST-3.3: No Unsafe Template Filters
   Method: Static analysis of template files
   Scan for:
-    - {{ variable | safe }}
-    - {{ variable | raw }}
-    - {% autoescape off %}
+    - ${{ '{{' }} variable | safe }}
+    - ${{ '{{' }} variable | raw }}
+    - ${{ '{%' }} autoescape off %}
   Pass Criteria: Zero matches (or documented exceptions only)
 
 TEST-3.4: JavaScript Context Escaping
