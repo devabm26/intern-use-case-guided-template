@@ -1,0 +1,45 @@
+openapi: 3.0.0
+info:
+  title: ${{ values.component_id }} API
+  description: ${{ values.description }}
+  version: 1.0.0
+  contact:
+    name: ${{ values.owner }}
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://${{ values.component_id }}.example.com
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the application
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  database:
+                    type: string
+                    example: connected
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # Add your API endpoints here
+  # Example:
+  # /api/v1/data:
+  #   get:
+  #     summary: Get data
+  #     responses:
+  #       '200':
+  #         description: Success

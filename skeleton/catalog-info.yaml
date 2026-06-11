@@ -10,7 +10,7 @@ metadata:
     - secure-by-default
   annotations:
     backstage.io/techdocs-ref: dir:.
-    gitlab.com/project-slug: dashboards/${{ values.component_id }}
+    github.com/project-slug: devabm26/${{ values.component_id }}
 spec:
   type: service
   lifecycle: production
@@ -18,8 +18,6 @@ spec:
   system: data-platform
   providesApis:
     - ${{ values.component_id }}-api
-  consumesApis:
-    - postgresql-database
 
 ---
 apiVersion: backstage.io/v1alpha1
@@ -32,4 +30,4 @@ spec:
   lifecycle: production
   owner: ${{ values.owner }}
   definition:
-    $text: ./openapi.yaml  # Optional: if you generate OpenAPI spec
+    $text: ./openapi.yaml
