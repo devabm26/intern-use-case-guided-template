@@ -114,7 +114,7 @@ spec:
       input:
         allowedHosts: ['github.com']
         description: ${{ parameters.description }}
-        repoUrl: github.com?owner=devadbm26&repo=${{ parameters.component_id }}
+        repoUrl: github.com?owner=devabm26&repo=${{ parameters.component_id }}
         defaultBranch: main
         protectDefaultBranch: true
 
