@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import yaml; print\\('Pipeline YAML is valid' if yaml.safe_load\\(open\\('tekton-pipeline.yaml'\\)\\) else 'Invalid YAML'\\)\")",
+      "Bash(awk '/^    - name: scan-image-rhacs$/,/^    - name: generate-sbom$/' /Users/anattama/project-new/devabm/intern-use-case-demo/tekton-pipeline.yaml)",
+      "Bash(awk '/scan-image-rhacs-old-inline-removed/,/^    - name: generate-sbom$/ {print NR\": \"$0}' /Users/anattama/project-new/devabm/intern-use-case-demo/tekton-pipeline.yaml)",
+      "Bash(kubectl get *)",
+      "Bash(chmod +x *)",
+      "Bash(kubectl apply *)"
+    ]
+  }
+}

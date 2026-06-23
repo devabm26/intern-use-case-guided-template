@@ -12,6 +12,9 @@ metadata:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: devabm26/${{ values.component_id }}
     dev.redhat.com/devspaces-url: https://devspaces.apps.cluster-6pfqs.6pfqs.sandbox2325.opentlc.com/#https://github.com/devabm26/${{ values.component_id }}
+    backstage.io/kubernetes-id: ${{ values.component_id }}
+    backstage.io/kubernetes-namespace: thoughts-app 
+    janus-idp.io/tekton: ${{ values.component_id }}
   links:
     - url: https://github.com/devabm26/${{ values.component_id }}
       title: View Source
