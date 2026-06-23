@@ -26,9 +26,9 @@ spec:
   type: service
   lifecycle: production
   owner: ${{ values.owner }}
-  system: data-platform
   providesApis:
     - ${{ values.component_id }}-api
+
 
 ---
 apiVersion: backstage.io/v1alpha1
