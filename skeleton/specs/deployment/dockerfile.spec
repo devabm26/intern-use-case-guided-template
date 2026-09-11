@@ -285,6 +285,49 @@ REQ-7: PRODUCTION SERVER
     ❌ Gunicorn without logging flags (logs lost)
 
 ================================================================================
+CONTAINERFILE HEADER DOCUMENTATION (REQUIRED)
+================================================================================
+
+Every Containerfile MUST include a header comment block documenting:
+  - Application name
+  - Runtime image and its characteristics
+  - Builder image and its purpose
+  - Reference to this spec
+
+REQUIRED HEADER PATTERN:
+
+# ================================================================================
+# <Application Name> — Containerfile
+# Runtime: registry.access.redhat.com/hi/python:latest (Hummingbird hardened,
+#          Python 3.14, non-root UID 65532, no package manager — distroless-style)
+# Builder: registry.access.redhat.com/ubi9/python-39:latest (has dnf to compile
+#          native extensions; discarded after build — never ships in final image)
+# Spec: specs/deployment/dockerfile.spec
+# ================================================================================
+
+WHY THIS MATTERS:
+  - Documents image choice (why hardened vs UBI)
+  - Explains security model (UID 65532, distroless)
+  - Clarifies what's in runtime vs builder
+  - Links to authoritative spec
+  - Helps reviewers understand security posture
+  - Self-documenting infrastructure
+
+STAGE SEPARATOR COMMENTS (RECOMMENDED):
+
+# ── Stage 1: Builder (UBI9 — has dnf, gcc, postgresql-devel) ─────────────────
+# The builder is never shipped. It exists only to compile native extensions and
+# install all Python packages into /opt/venv, which is then copied to runtime.
+
+# ── Stage 2: Runtime (Hardened Image — no package manager, UID 65532) ─────────
+
+BENEFITS:
+  - Clear visual separation of stages
+  - Explains purpose of each stage
+  - Makes Containerfile easier to understand
+  - Prevents accidental runtime package installation
+
+================================================================================
 RECOMMENDED CONTAINERFILE TEMPLATE (Hardened Runtime - PRODUCTION DEFAULT)
 ================================================================================
 
@@ -640,22 +683,35 @@ BUILD & DEPLOYMENT WORKFLOW
 VALIDATION CHECKLIST
 ================================================================================
 
-Before committing Dockerfile:
+Before committing Containerfile:
+[ ] Header documentation block included
+    [ ] Application name
+    [ ] Runtime image documented (registry.access.redhat.com/hi/python:latest)
+    [ ] Builder image documented (registry.access.redhat.com/ubi9/python-39:latest)
+    [ ] Spec reference included
 [ ] Uses approved Red Hat base images
-    [ ] Builder stage: registry.access.redhat.com/ubi9/python-311:latest
+    [ ] Builder stage: registry.access.redhat.com/ubi9/python-39:latest
     [ ] Runtime stage: registry.access.redhat.com/hi/python:latest (PREFERRED)
         OR registry.access.redhat.com/ubi9/python-311:latest (if hardened not suitable)
 [ ] Multi-stage build implemented (REQUIRED for hardened images)
-[ ] Non-root user configured
-    [ ] Hardened image: Runs as UID 65532 (built-in, no USER directive needed)
-    [ ] UBI image: Runs as UID 1001 (built-in, USER 1001 for clarity)
-[ ] No secrets in any layer
-[ ] Minimal packages installed
-[ ] All runtime dependencies copied from builder (for hardened images)
-[ ] Health check configured
-    [ ] Hardened image: Kubernetes probes defined (no HEALTHCHECK instruction)
-    [ ] UBI image: HEALTHCHECK instruction OR Kubernetes probes
-[ ] Production server configured (Gunicorn/Uvicorn)
+[ ] Builder stage uses USER root before dnf install
+[ ] Build dependencies include: gcc, postgresql-devel, python3-devel
+[ ] dnf cache cleaned: dnf clean all && rm -rf /var/cache/dnf
+[ ] Non-root user explicitly set
+    [ ] Hardened image: USER 65532 (explicitly set for clarity)
+    [ ] UBI image: USER 1001 (explicitly set for clarity)
+[ ] File ownership correct
+    [ ] Hardened image: --chown=65532:0 for all COPY commands
+    [ ] UBI image: --chown=1001:0 for all COPY commands
+[ ] No secrets in any layer (ENV vars do NOT contain secrets)
+[ ] Environment variables include PYTHONUNBUFFERED=1 and PYTHONDONTWRITEBYTECODE=1
+[ ] Minimal packages installed (only venv copied from builder to runtime)
+[ ] Health check configured using Python stdlib (works in hardened images)
+    [ ] HEALTHCHECK with python -c "import urllib.request; ..." || exit 1
+[ ] Production server configured (Gunicorn with logging flags)
+    [ ] --access-logfile "-" included
+    [ ] --error-logfile "-" included
+[ ] Port 8080 exposed (non-privileged port)
 [ ] .dockerignore file exists
 
 Before deploying:
@@ -695,10 +751,31 @@ VIOLATION: Development server in production
 REFERENCES
 ================================================================================
 
-- Docker Best Practices
-- CIS Docker Benchmark
-- NIST Application Container Security Guide
-- OWASP Docker Security Cheat Sheet
+WORKING EXAMPLE (REFERENCE IMPLEMENTATION):
+  https://github.com/devabm26/python-report-secured/blob/main/Containerfile
+
+  This is a production-grade example demonstrating all requirements:
+  - Red Hat hardened image for runtime (registry.access.redhat.com/hi/python:latest)
+  - UBI builder stage with proper USER root pattern
+  - Complete header documentation
+  - Python stdlib HEALTHCHECK (works in hardened images)
+  - Gunicorn with container logging flags
+  - Proper file ownership (65532:0)
+  - All best practices implemented
+
+  When generating Containerfiles, use this as the reference pattern.
+
+SECURITY STANDARDS:
+  - Docker Best Practices
+  - CIS Docker Benchmark
+  - NIST Application Container Security Guide
+  - OWASP Docker Security Cheat Sheet
+  - Red Hat Container Security Guide
+
+RED HAT HARDENED IMAGES:
+  - Image registry: registry.access.redhat.com/hi/
+  - Documentation: Red Hat Hummingbird Initiative
+  - Distroless-style Python runtime with security hardening
 
 ================================================================================
 END OF SPECIFICATION
