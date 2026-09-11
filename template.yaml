@@ -112,7 +112,7 @@ spec:
       name: Publish to GitHub
       action: publish:github
       input:
-        allowedHosts: ['github.com']
+        #allowedHosts: ['github.com']
         description: ${{ parameters.description }}
         repoUrl: github.com?owner=devabm26&repo=${{ parameters.component_id }}
         defaultBranch: main
