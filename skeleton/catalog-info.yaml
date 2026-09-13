@@ -19,7 +19,7 @@ metadata:
     - url: https://github.com/devabm26/${{ values.component_id }}
       title: View Source
       icon: github
-    - url: https://devspaces.apps.cluster-6pfqs.6pfqs.sandbox2325.opentlc.com/#https://github.com/devabm26/${{ values.component_id }}
+    - url: https://devspaces.apps.cluster-pjx5k.dyn.redhatworkshops.io/#https://github.com/devabm26/${{ values.component_id }}
       title: Open in DevSpaces
       icon: dashboard
 spec:
