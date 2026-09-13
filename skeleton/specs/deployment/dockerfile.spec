@@ -35,10 +35,14 @@ All Dockerfile definitions for Python applications
 APPROVED BASE IMAGES
 ================================================================================
 
+⚠️  CRITICAL RULE: ONLY Red Hat images (registry.access.redhat.com) are approved
+                  DO NOT use python:3.11, python:3.11-slim, or ANY docker.io images
+                  This applies to BOTH builder and runtime stages - NO EXCEPTIONS
+
 IMAGE SELECTION STRATEGY:
   🥇 PREFERRED: Hardened images for runtime (maximum security)
   🥈 ALTERNATIVE: UBI images when debugging/package management needed
-  🏗️  BUILDER STAGE: Always use UBI (requires package manager)
+  🏗️  BUILDER STAGE: MUST use Red Hat UBI (requires package manager)
 
 HARDENED IMAGES (Red Hat Hardened - PREFERRED FOR RUNTIME):
   registry.access.redhat.com/hi/python:latest
@@ -130,13 +134,21 @@ DECISION TREE - WHICH IMAGE TO USE:
   Is this for development/debugging?
     YES → Use UBI (registry.access.redhat.com/ubi9/python-311:latest)
 
-FORBIDDEN:
+FORBIDDEN (APPLIES TO ALL STAGES - BUILDER AND RUNTIME):
   ❌ python:latest (unpredictable, breaks reproducibility)
+  ❌ python:3.11 (or ANY python:3.x) - Use Red Hat UBI or hardened images ONLY
+  ❌ python:3.11-slim (or ANY python:*-slim) - Use registry.access.redhat.com images
+  ❌ python:3.11-alpine (or ANY python:*-alpine) - Use Red Hat UBI
   ❌ python:3.8 or older (EOL, no security patches)
-  ❌ python:alpine (compatibility issues with psycopg2, numpy, etc.)
-  ❌ ubuntu, debian base images (use Red Hat UBI for enterprise)
+  ❌ ubuntu:*, debian:* base images (use Red Hat UBI for enterprise)
   ❌ Custom base images (without security approval)
   ❌ Non-Red Hat images in Red Hat OpenShift environments
+
+  CRITICAL: Even for builder stages, ONLY Red Hat images are approved.
+            NO exceptions for "just the builder" - builder must be UBI.
+
+  CORRECT builder: FROM registry.access.redhat.com/ubi9/python-39:latest AS builder
+  WRONG builder:   FROM python:3.11 AS builder  ← FORBIDDEN
 
 ================================================================================
 PYTHON DEPENDENCY MANAGEMENT
@@ -232,7 +244,10 @@ REQ-1: MULTI-STAGE BUILDS (REQUIRED)
       - Copy application code
       - Run as non-root user (65532 for hardened, 1001 for UBI)
 
-  Builder Stage Pattern:
+  Builder Stage Pattern (MANDATORY - Red Hat UBI ONLY):
+    # ❌ WRONG: FROM python:3.11 AS builder
+    # ❌ WRONG: FROM python:3.11-slim AS builder
+    # ✅ CORRECT: Use Red Hat UBI with specific Python version
     FROM registry.access.redhat.com/ubi9/python-39:latest AS builder
 
     # UBI images default to non-root - switch to root for system packages
@@ -253,6 +268,9 @@ REQ-1: MULTI-STAGE BUILDS (REQUIRED)
     COPY requirements.txt .
     RUN pip install --no-cache-dir --upgrade pip && \
         pip install --no-cache-dir -r requirements.txt
+
+  CRITICAL: Builder stage MUST use Red Hat UBI (registry.access.redhat.com/ubi9/python-*)
+            Do NOT use docker.io/python:* images even for builder stage.
 
   Why python3-devel is required:
     - Needed to compile Python packages with C extensions
@@ -430,11 +448,17 @@ RECOMMENDED CONTAINERFILE TEMPLATE (Hardened Runtime - PRODUCTION DEFAULT)
 # Builder: registry.access.redhat.com/ubi9/python-39:latest (has dnf to compile
 #          native extensions; discarded after build — never ships in final image)
 # Spec: specs/deployment/dockerfile.spec
+#
+# ⚠️  CRITICAL: ONLY Red Hat images approved (registry.access.redhat.com)
+#              Do NOT use python:3.11, python:3.11-slim, or any docker.io images
 # ================================================================================
 
 # ── Stage 1: Builder (UBI9 — has dnf, gcc, postgresql-devel) ─────────────────
 # The builder is never shipped. It exists only to compile native extensions and
 # install all Python packages into /opt/venv, which is then copied to runtime.
+#
+# ✅ CORRECT: registry.access.redhat.com/ubi9/python-39:latest
+# ❌ WRONG:   python:3.11 or python:3.11-slim
 FROM registry.access.redhat.com/ubi9/python-39:latest AS builder
 
 # Switch to root to install system packages (UBI images default to non-root)
@@ -781,10 +805,14 @@ Before committing Containerfile:
     [ ] Runtime image documented (registry.access.redhat.com/hi/python:latest)
     [ ] Builder image documented (registry.access.redhat.com/ubi9/python-39:latest)
     [ ] Spec reference included
-[ ] Uses approved Red Hat base images
+[ ] Uses approved Red Hat base images (CRITICAL - NO EXCEPTIONS)
     [ ] Builder stage: registry.access.redhat.com/ubi9/python-39:latest
     [ ] Runtime stage: registry.access.redhat.com/hi/python:latest (PREFERRED)
         OR registry.access.redhat.com/ubi9/python-311:latest (if hardened not suitable)
+    [ ] NO python:3.11 or python:3.x images (FORBIDDEN in ALL stages)
+    [ ] NO python:*-slim images (use Red Hat hardened instead)
+    [ ] NO python:*-alpine images (use Red Hat UBI instead)
+    [ ] NO ubuntu/debian base images (Red Hat only)
 [ ] Multi-stage build implemented (REQUIRED for hardened images)
 [ ] Builder stage uses USER root before dnf install
 [ ] Build dependencies include: gcc, postgresql-devel, python3-devel
@@ -819,6 +847,13 @@ Before deploying:
 COMMON VIOLATIONS & FIXES
 ================================================================================
 
+VIOLATION: Using non-Red Hat base images
+  Bad: FROM python:3.11 AS builder
+  Bad: FROM python:3.11-slim
+  Bad: FROM python:3.11-alpine AS builder
+  Fix: FROM registry.access.redhat.com/ubi9/python-39:latest AS builder
+  Fix: FROM registry.access.redhat.com/hi/python:latest (runtime)
+
 VIOLATION: Running as root
   Bad: No USER directive
   Fix: Add USER appuser before CMD
@@ -827,9 +862,11 @@ VIOLATION: Secrets in image
   Bad: COPY credentials.json /app/
   Fix: Mount secrets at runtime (Kubernetes Secrets)
 
-VIOLATION: Using latest tag
+VIOLATION: Using latest tag or non-Red Hat images
   Bad: FROM python:latest
-  Fix: FROM python:3.11-slim-bookworm
+  Bad: FROM python:3.11-slim-bookworm
+  Fix: FROM registry.access.redhat.com/ubi9/python-39:latest AS builder (builder)
+  Fix: FROM registry.access.redhat.com/hi/python:latest (runtime)
 
 VIOLATION: No health check
   Bad: Missing HEALTHCHECK
