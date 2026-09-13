@@ -89,6 +89,26 @@ spec:
           type: boolean
           description: Track dependencies for CVE monitoring
           default: true
+        enable_tpa_package_check:
+          title: Enable TPA Package Vulnerability Check
+          type: boolean
+          description: Check packages against Red Hat Trusted Profile Analyzer before adding to requirements.txt
+          default: false
+        tpa_url:
+          title: TPA Server URL
+          type: string
+          description: Red Hat Trusted Profile Analyzer API endpoint (e.g., https://server-tssc-tpa.apps.cluster.local)
+          default: https://server-tssc-tpa.apps.cluster-pjx5k.dyn.redhatworkshops.io
+        tpa_oidc_issuer:
+          title: TPA OIDC Issuer URL
+          type: string
+          description: OIDC/Keycloak issuer URL for TPA authentication
+          default: https://sso.apps.cluster-pjx5k.dyn.redhatworkshops.io/realms/tssc-iam
+        tpa_client_id:
+          title: TPA OIDC Client ID
+          type: string
+          description: OIDC client ID for TPA API access (e.g., cli)
+          default: cli
 
   steps:
     - id: fetch-base
@@ -107,6 +127,10 @@ spec:
           enable_sbom_scanning: ${{ parameters.enable_sbom_scanning }}
           enable_container_scanning: ${{ parameters.enable_container_scanning }}
           enable_dependency_track: ${{ parameters.enable_dependency_track }}
+          enable_tpa_package_check: ${{ parameters.enable_tpa_package_check }}
+          tpa_url: ${{ parameters.tpa_url }}
+          tpa_oidc_issuer: ${{ parameters.tpa_oidc_issuer }}
+          tpa_client_id: ${{ parameters.tpa_client_id }}
 
     - id: publish
       name: Publish to GitHub

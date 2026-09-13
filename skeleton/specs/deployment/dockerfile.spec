@@ -5,6 +5,24 @@ Enforcement Level: CRITICAL (BLOCKING)
 Version: 2.0
 ================================================================================
 
+PLATFORM ENFORCEMENT NOTICE
+----------------------------
+This specification is enforced by the Application Platform through:
+
+✅ Backstage Templates: Auto-generate compliant Containerfiles
+✅ CI/CD Pipelines: Block builds that violate security standards
+✅ Container Scanning: Trivy/RHACS scans block deployment on HIGH/CRITICAL CVEs
+✅ TPA Integration: Real-time package vulnerability checking
+✅ Automated Reviews: Platform validates compliance before merge
+
+WITHOUT PLATFORM: These are guidelines developers might ignore or forget
+WITH PLATFORM: These are enforced guardrails that prevent insecure deployments
+
+Platform Benefit: Developers get secure-by-default templates instead of writing
+                  Dockerfiles from scratch. Security is built-in, not bolted-on.
+
+================================================================================
+
 PURPOSE
 -------
 Ensure all container images follow security best practices.
@@ -119,6 +137,80 @@ FORBIDDEN:
   ❌ ubuntu, debian base images (use Red Hat UBI for enterprise)
   ❌ Custom base images (without security approval)
   ❌ Non-Red Hat images in Red Hat OpenShift environments
+
+================================================================================
+PYTHON DEPENDENCY MANAGEMENT
+================================================================================
+
+REQUIREMENTS FILES STRUCTURE (MANDATORY):
+
+  requirements.txt (Runtime dependencies ONLY):
+    - Production dependencies needed to run the application
+    - Installed in the runtime container
+    - Keep minimal - fewer packages = smaller attack surface
+    - Pin all versions with == (no >=, no ~=)
+
+    Example:
+      Flask==3.0.3
+      psycopg2-binary==2.9.9
+      gunicorn==22.0.0
+      python-dotenv==1.0.1
+
+  requirements-dev.txt (Development/Security tooling ONLY):
+    - Security scanning tools (pip-audit, bandit, detect-secrets)
+    - Testing frameworks (pytest, pytest-cov)
+    - Linting tools (flake8, black, mypy)
+    - Development utilities
+    - NEVER installed in runtime container
+    - Used only in CI/CD pipelines and local development
+
+    Example:
+      pip-audit==2.7.3
+      bandit==1.7.9
+      detect-secrets==1.4.0
+      pytest==8.2.2
+      pytest-cov==5.0.0
+      flake8==7.0.0
+
+WHY SEPARATION MATTERS:
+  ✅ Smaller runtime image (fewer packages)
+  ✅ Reduced attack surface (fewer dependencies = fewer CVEs)
+  ✅ Faster container startup (less to load)
+  ✅ Clear separation of concerns
+  ✅ Security tooling runs in CI/CD, not production
+  ✅ Fair vulnerability comparison (apples-to-apples)
+
+CONTAINERFILE PATTERN:
+  # Builder stage - install runtime dependencies only
+  COPY requirements.txt .
+  RUN pip install --no-cache-dir --upgrade pip && \
+      pip install --no-cache-dir -r requirements.txt
+
+  # Security scanning happens in CI/CD (NOT in Containerfile):
+  # pip install -r requirements-dev.txt
+  # pip-audit --require-hashes
+  # bandit -r src/
+  # detect-secrets scan
+
+VERSION PINNING RULE:
+  - ALL packages MUST use == (exact version)
+  - NEVER use >= (unpredictable, allows drift)
+  - NEVER use ~= (allows patch version drift)
+  - NEVER leave unpinned (reproducibility failure)
+
+  Bad:
+    Flask>=3.0        # Allows 3.1, 3.2, etc.
+    psycopg2-binary   # Unpinned - could install any version
+
+  Good:
+    Flask==3.0.3      # Exact version, immutable
+    psycopg2-binary==2.9.9
+
+FORBIDDEN IN requirements.txt:
+  ❌ Development tools (pytest, flake8, black)
+  ❌ Security scanners (pip-audit, bandit, detect-secrets)
+  ❌ Build tools (setuptools, wheel) - use build backend only
+  ❌ Unpinned versions (>=, ~=, or no version)
 
 ================================================================================
 MANDATORY DOCKERFILE PATTERNS

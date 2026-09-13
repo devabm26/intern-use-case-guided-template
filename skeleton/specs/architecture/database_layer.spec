@@ -5,6 +5,24 @@ Enforcement Level: REQUIRED
 Version: 2.0
 ================================================================================
 
+PLATFORM ENFORCEMENT NOTICE
+----------------------------
+This specification is enforced by the Application Platform through:
+
+✅ Template Patterns: Backstage generates apps with psycopg2 connection pooling
+✅ Configuration: Platform templates include proper connection pool settings
+✅ Secret Injection: Database credentials from Vault/Kubernetes Secrets (never hardcoded)
+✅ Monitoring: Platform provides connection pool metrics dashboards
+✅ Best Practices: Templates show only approved database patterns
+
+WITHOUT PLATFORM: Developers might create connections per request, hardcode credentials
+WITH PLATFORM: Connection pooling configured, credentials injected securely
+
+Platform Benefit: Database connections are performant and secure by default.
+                  No knowledge required to configure pooling correctly.
+
+================================================================================
+
 PURPOSE
 -------
 Define secure, performant database connection patterns for Python applications.

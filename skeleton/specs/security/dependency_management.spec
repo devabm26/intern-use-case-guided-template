@@ -5,6 +5,24 @@ Enforcement Level: REQUIRED
 Version: 2.0
 ================================================================================
 
+PLATFORM ENFORCEMENT NOTICE
+----------------------------
+This specification is enforced by the Application Platform through:
+
+✅ TPA Integration: Automated package vulnerability checking before adding to requirements.txt
+✅ CI/CD Gates: pip-audit scans block pipeline on HIGH/CRITICAL CVEs
+✅ Pre-commit Hooks: Platform-generated hooks validate dependencies before commit
+✅ SBOM Generation: Automatic Software Bill of Materials for every build
+✅ Version Pinning: Platform templates enforce == pinning by default
+
+WITHOUT PLATFORM: Developers manually check packages, might skip steps, inconsistent
+WITH PLATFORM: Every package checked against TPA automatically, consistent enforcement
+
+Platform Benefit: Secure dependency management is automatic, not optional.
+                  Developers get real-time feedback, not post-deployment surprises.
+
+================================================================================
+
 PURPOSE
 -------
 Ensure secure, vetted, and maintainable Python dependencies.
@@ -95,13 +113,28 @@ PRODUCTION DEPENDENCIES (requirements.txt):
   - Required for application runtime
   - Included in production container
   - Fully vetted and scanned
+  - KEEP MINIMAL: Fewer packages = smaller attack surface
 
 DEVELOPMENT DEPENDENCIES (requirements-dev.txt):
   - Testing, linting, local development
+  - Security scanning tools (pip-audit, bandit, detect-secrets)
   - NOT included in production container
+  - NEVER installed in runtime Dockerfile
+  - Used only in CI/CD pipelines and local development
   - Still scanned for vulnerabilities
 
-EXAMPLE requirements.txt:
+CRITICAL RULE - SECURITY TOOLS BELONG IN requirements-dev.txt:
+  ❌ WRONG: Including pip-audit, bandit, detect-secrets in requirements.txt
+  ✅ RIGHT: Security scanning tools ONLY in requirements-dev.txt
+
+  WHY: Security scanning tools are for BUILD-TIME analysis, not RUNTIME.
+       Including them in the runtime container:
+       - Increases attack surface (more packages = more CVEs)
+       - Wastes image space (scanning tools unused at runtime)
+       - Violates separation of concerns
+       - Makes vulnerability comparison misleading
+
+EXAMPLE requirements.txt (RUNTIME DEPENDENCIES ONLY):
 ```
 # Web Framework
 Flask==3.0.3
@@ -110,14 +143,25 @@ Werkzeug==3.0.3
 # Database
 psycopg2-binary==2.9.9
 
-# Security
-Flask-WTF==1.2.1
-WTForms==3.1.2
-python-dotenv==1.0.1
+# Security (RUNTIME security, not scanning tools)
+Flask-WTF==1.2.1          # CSRF protection (runtime security)
+WTForms==3.1.2            # Form validation (runtime security)
+python-dotenv==1.0.1      # Secret management (runtime)
 
 # Production Server
 gunicorn==22.0.0
 ```
+
+FORBIDDEN IN requirements.txt (BUILD-TIME TOOLS - USE requirements-dev.txt):
+  ❌ pip-audit           # Vulnerability scanner (CI/CD only)
+  ❌ bandit              # Security linter (CI/CD only)
+  ❌ detect-secrets      # Secret detector (CI/CD only)
+  ❌ pytest              # Testing framework (development only)
+  ❌ pytest-cov          # Coverage tool (development only)
+  ❌ black               # Code formatter (development only)
+  ❌ flake8              # Linter (development only)
+  ❌ mypy                # Type checker (development only)
+  ❌ cyclonedx-bom       # SBOM generator (CI/CD only)
 
 EXAMPLE requirements-dev.txt:
 ```

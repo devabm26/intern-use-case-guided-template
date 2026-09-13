@@ -5,6 +5,24 @@ Enforcement Level: CRITICAL (BLOCKING)
 Version: 2.0
 ================================================================================
 
+PLATFORM ENFORCEMENT NOTICE
+----------------------------
+This specification is enforced by the Application Platform through:
+
+✅ ORM Templates: Backstage generates apps using psycopg2 with parameterized queries
+✅ Bandit Rules: Static analysis detects string concatenation in SQL queries
+✅ Code Patterns: Platform templates show only safe query examples
+✅ Security Tests: Generated test suites verify parameterized query usage
+✅ Code Reviews: Platform flags dangerous SQL patterns automatically
+
+WITHOUT PLATFORM: Developers might use string formatting, easy to introduce SQLi
+WITH PLATFORM: Templates use only safe patterns, dangerous patterns flagged immediately
+
+Platform Benefit: SQL injection is structurally prevented by using safe libraries
+                  and patterns. Developers can't accidentally introduce SQLi.
+
+================================================================================
+
 PURPOSE
 -------
 Eliminate SQL injection vulnerabilities through mandatory parameterized queries.

@@ -5,6 +5,25 @@ Enforcement Level: REQUIRED
 Version: 2.0
 ================================================================================
 
+PLATFORM ENFORCEMENT NOTICE
+----------------------------
+This specification is enforced by the Application Platform through:
+
+✅ Scaffolding: Backstage generates complete project structure automatically
+✅ Consistency: Every project follows identical architecture patterns
+✅ Best Practices: Templates include logging, error handling, health checks
+✅ Separation of Concerns: Platform enforces MVC/layered architecture
+✅ Production-Ready: Generated apps include all production requirements
+
+WITHOUT PLATFORM: Every developer creates different structure, inconsistent patterns
+WITH PLATFORM: Consistent architecture across all applications, proven patterns
+
+Platform Benefit: Developers don't debate architecture or reinvent structure.
+                  New team members understand all apps instantly (same layout).
+                  Onboarding time reduced by 50%+.
+
+================================================================================
+
 PURPOSE
 -------
 Define standard architecture patterns for Python web applications.

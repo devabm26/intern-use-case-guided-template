@@ -5,6 +5,24 @@ Enforcement Level: CRITICAL (BLOCKING)
 Version: 2.0
 ================================================================================
 
+PLATFORM ENFORCEMENT NOTICE
+----------------------------
+This specification is enforced by the Application Platform through:
+
+✅ Test Scaffolding: Backstage templates include pre-built security test suites
+✅ CI/CD Gates: Security tests must pass before pipeline proceeds
+✅ Coverage Requirements: Platform enforces 100% coverage of security-critical code
+✅ Automated Regression: Platform re-runs security tests on every commit
+✅ Security Test Library: Platform provides reusable test fixtures for common patterns
+
+WITHOUT PLATFORM: Developers might skip security tests, or write inadequate ones
+WITH PLATFORM: Security tests are generated, comprehensive, and enforced
+
+Platform Benefit: Security testing is automatic and comprehensive.
+                  Regression prevented by continuous testing in CI/CD.
+
+================================================================================
+
 PURPOSE
 -------
 Define mandatory security tests that MUST pass before deployment.

@@ -5,6 +5,24 @@ Enforcement Level: REQUIRED
 Version: 2.0
 ================================================================================
 
+PLATFORM ENFORCEMENT NOTICE
+----------------------------
+This specification is enforced by the Application Platform through:
+
+✅ Auto-generated Pipelines: Backstage templates create compliant .tekton/ or .github/workflows/
+✅ Mandatory Security Gates: Secret detection, dependency scanning, container scanning
+✅ Blocking Failures: HIGH/CRITICAL findings stop deployment automatically
+✅ SBOM Compliance: Every build generates Software Bill of Materials
+✅ Approval Workflows: Production deployments require platform-configured approvals
+
+WITHOUT PLATFORM: Developers write pipelines from scratch, might skip security stages
+WITH PLATFORM: Security gates are pre-configured, can't be bypassed without platform override
+
+Platform Benefit: Every application gets enterprise-grade CI/CD security automatically.
+                  Developers focus on features, platform ensures secure delivery.
+
+================================================================================
+
 PURPOSE
 -------
 Define mandatory CI/CD pipeline stages with security gates.
@@ -201,28 +219,33 @@ STAGE 1: SECURITY SCAN
 ----------------------
 Container Image: registry.access.redhat.com/ubi9/python-311:latest
 
+NOTE: Security scanning tools are installed from requirements-dev.txt in CI/CD.
+      These tools are NEVER included in the runtime container image.
+
 Job 1: Secret Detection (BLOCKING)
   Commands:
-    pip install detect-secrets
+    pip install -r requirements-dev.txt  # Installs detect-secrets
     detect-secrets scan --all-files --force-use-all-plugins > .secrets.baseline
   Exit Code: Must be 0 (no secrets found)
 
 Job 2: Dependency Scanning (BLOCKING)
   Commands:
-    pip install pip-audit
+    pip install -r requirements-dev.txt  # Installs pip-audit
     pip-audit -r requirements.txt --desc --format json --output audit-report.json
   Exit Code: Must be 0 (no HIGH/CRITICAL CVEs)
   Artifacts: audit-report.json
+  Note: Scans requirements.txt (runtime deps), not requirements-dev.txt
 
 Job 3: SBOM Generation (REQUIRED)
   Commands:
-    pip install cyclonedx-bom
+    pip install -r requirements-dev.txt  # Installs cyclonedx-bom
     cyclonedx-py requirements -r requirements.txt -o sbom.json
   Artifacts: sbom.json
+  Note: SBOM includes only runtime dependencies from requirements.txt
 
 Job 4: Static Analysis (BLOCKING)
   Commands:
-    pip install bandit
+    pip install -r requirements-dev.txt  # Installs bandit
     bandit -r src/ -ll -f json -o bandit-report.json
   Exit Code: Must be 0 (no HIGH/CRITICAL findings)
   Artifacts: bandit-report.json
@@ -233,7 +256,8 @@ Container Image: registry.access.redhat.com/ubi9/python-311:latest
 
 Job 1: Unit Tests (BLOCKING)
   Setup:
-    pip install -r requirements.txt
+    pip install -r requirements.txt       # Runtime dependencies
+    pip install -r requirements-dev.txt   # Testing tools (pytest, pytest-cov)
   Commands:
     pytest tests/ -v --cov=src --cov-report=xml --cov-report=term
   Exit Code: Must be 0 (all tests pass)
@@ -242,7 +266,8 @@ Job 1: Unit Tests (BLOCKING)
 
 Job 2: Security Tests (BLOCKING)
   Setup:
-    pip install -r requirements.txt
+    pip install -r requirements.txt       # Runtime dependencies
+    pip install -r requirements-dev.txt   # Testing tools (pytest)
   Commands:
     pytest tests/test_security.py -v
   Exit Code: Must be 0 (all security tests pass)
